@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teilnehmen – Wirtschaftsforum Stralsund</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{
+    --accent:#b5152b;
+    --accent-dark:#8a0f21;
+    --accent-tint:#faeaec;
+    --ink:#0d1117;
+    --body:#3d4148;
+    --paper:#ffffff;
+    --gray-bg:#f4f5f7;
+    --line:#e2e5ea;
+    --footer-bg:#04182e;
+    --footer-text:#aeb8c6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Inter',Arial,sans-serif;
+    color:var(--body);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  img{display:block;max-width:100%;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    font-weight:700;color:var(--accent);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 26px;
+    font-size:14px;font-weight:600;
+    border-radius:3px;border:1.5px solid transparent;
+    cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-outline-dark{background:transparent;color:var(--ink);border-color:var(--ink);}
+  .btn-outline-dark:hover{background:var(--ink);color:#fff;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:76px;}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px;color:var(--ink);}
+  .brand .mark{width:28px;height:28px;background:var(--accent);border-radius:6px;flex:none;}
+  .nav-right{display:flex;align-items:center;gap:22px;}
+  .burger{display:flex;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+  .burger span{width:22px;height:2px;background:var(--ink);display:block;transition:transform .2s ease,opacity .2s ease;}
+  .burger[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+  .burger[aria-expanded="true"] span:nth-child(2){opacity:0;}
+  .burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+  /* ---------- Menu Panel ---------- */
+  .menu-backdrop{
+    position:fixed;inset:0;background:rgba(4,24,46,.55);
+    opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease;z-index:90;
+  }
+  .menu-backdrop.open{opacity:1;visibility:visible;}
+  .menu-panel{
+    position:fixed;top:0;right:0;height:100%;width:340px;max-width:86vw;
+    background:#fff;z-index:95;box-shadow:-10px 0 32px rgba(0,0,0,.14);
+    transform:translateX(100%);transition:transform .3s ease;
+    padding:30px 30px 40px;display:flex;flex-direction:column;
+  }
+  .menu-panel.open{transform:translateX(0);}
+  .menu-panel-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px;}
+  .menu-panel-brand{font-weight:800;font-size:15px;color:var(--ink);}
+  .menu-close{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:var(--ink);padding:4px 8px;}
+  .menu-close:focus-visible,.burger:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .menu-links{list-style:none;display:flex;flex-direction:column;}
+  .menu-links a{
+    display:block;padding:18px 2px;font-size:21px;font-weight:700;color:var(--ink);
+    border-bottom:1px solid var(--line);transition:color .15s ease;
+  }
+  .menu-links a:hover{color:var(--accent);}
+  .menu-panel-foot{margin-top:auto;padding-top:24px;font-size:13px;color:#8a8f99;}
+
+  /* ---------- Page header ---------- */
+  .page-head{background:var(--gray-bg);padding:64px 0 44px;border-bottom:1px solid var(--line);}
+  .page-head h1{font-size:clamp(28px,3.6vw,40px);font-weight:800;color:var(--ink);letter-spacing:-.01em;margin-top:10px;}
+  .page-head p{font-size:15px;line-height:1.6;color:var(--body);max-width:560px;margin-top:14px;}
+
+  /* ---------- Form ---------- */
+  .form-section{padding:64px 0 100px;}
+  .form-card{max-width:760px;margin:0 auto;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 24px;}
+  .field{display:flex;flex-direction:column;gap:7px;}
+  .field.full{grid-column:1 / -1;}
+  .field label{font-size:13px;font-weight:600;color:var(--ink);}
+  .field label .req{color:var(--accent);}
+  .field label .opt{color:#8a8f99;font-weight:500;font-size:12px;}
+  .field input,.field select{
+    font-family:inherit;font-size:15px;color:var(--ink);
+    padding:12px 14px;border:1.5px solid var(--line);border-radius:4px;background:#fff;
+    transition:border-color .15s ease;
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent);}
+  .field input:invalid:not(:placeholder-shown){border-color:#c94b4b;}
+  .checkbox-field{display:flex;align-items:flex-start;gap:10px;margin-top:6px;}
+  .checkbox-field input{width:18px;height:18px;flex:none;margin-top:2px;accent-color:var(--accent);}
+  .checkbox-field label{font-size:13.5px;line-height:1.55;color:var(--body);}
+  .checkbox-field a{color:var(--accent);font-weight:600;}
+  .form-note{font-size:12.5px;color:#8a8f99;margin-top:2px;}
+  .form-actions{margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+  .form-required-hint{font-size:12.5px;color:#8a8f99;margin-top:28px;}
+
+  .success-box{
+    max-width:760px;margin:0 auto;text-align:center;padding:60px 20px;
+    border:1px solid var(--line);border-radius:6px;background:var(--gray-bg);display:none;
+  }
+  .success-box.show{display:block;}
+  .form-card.hide{display:none;}
+  .success-box .ic-ok{
+    width:56px;height:56px;border-radius:50%;background:var(--accent-tint);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 20px;
+  }
+  .success-box h2{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:10px;}
+  .success-box p{font-size:14.5px;color:var(--body);max-width:420px;margin:0 auto;}
+
+  /* ---------- Footer ---------- */
+  footer{background:var(--footer-bg);color:var(--footer-text);padding:76px 0 26px;}
+  .footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:40px;padding-bottom:52px;}
+  footer .brand{color:#fff;margin-bottom:16px;}
+  .footer-desc{font-size:14px;line-height:1.7;max-width:320px;color:#8fa0b8;}
+  .footer-heading{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fff;font-weight:700;margin-bottom:18px;}
+  .footer-links{list-style:none;display:flex;flex-direction:column;gap:12px;}
+  .footer-links a{font-size:14px;color:#aeb8c6;transition:color .15s ease;}
+  .footer-links a:hover{color:#fff;}
+  .footer-bottom{
+    border-top:1px solid rgba(255,255,255,.12);padding-top:24px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:13px;color:#728098;
+  }
+
+  @media (max-width:900px){
+    .footer-grid{grid-template-columns:1fr;gap:34px;}
+  }
+  @media (max-width:640px){
+    .wrap{padding:0 22px;}
+    .nav{height:66px;}
+    .nav-right .btn-primary{display:none;}
+    .page-head{padding:44px 0 32px;}
+    .form-section{padding:44px 0 64px;}
+    .form-grid{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+<script src="config.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <span class="mark"></span>
+      Wirtschaftsforum Stralsund
+    </a>
+    <div class="nav-right">
+      <a href="teilnehmen.html" class="btn btn-primary">Teilnehmen</a>
+      <button class="burger" id="burgerBtn" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="menu-backdrop" id="menuBackdrop"></div>
+<nav class="menu-panel" id="mobileMenu" aria-label="Hauptmenü">
+  <div class="menu-panel-top">
+    <span class="menu-panel-brand">Menü</span>
+    <button class="menu-close" id="menuCloseBtn" aria-label="Menü schließen">&times;</button>
+  </div>
+  <ul class="menu-links">
+    <li><a href="teilnehmen.html">Teilnehmen</a></li>
+    <li><a href="absagen.html">Absagen</a></li>
+    <li><a href="kontakt.html">Kontakt</a></li>
+  </ul>
+  <div class="menu-panel-foot">Wirtschaftsforum Stralsund · 05. November 2026</div>
+</nav>
+
+<section class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">Anmeldung</span>
+    <h1>Teilnehmen am Wirtschaftsforum Stralsund</h1>
+    <p>Bitte füllen Sie das Formular vollständig aus. Mit * markierte Felder sind Pflichtfelder. Die Plätze sind begrenzt – wir bestätigen Ihre Anmeldung per E-Mail.</p>
+  </div>
+</section>
+
+<section class="form-section">
+  <div class="wrap">
+
+    <form class="form-card" id="anmeldeForm" autocomplete="on" novalidate>
+      <div class="form-grid">
+
+        <div class="field">
+          <label for="anrede">Anrede <span class="req">*</span></label>
+          <select id="anrede" name="anrede" autocomplete="honorific-prefix" required>
+            <option value="" disabled selected>Bitte wählen</option>
+            <option value="Herr">Herr</option>
+            <option value="Frau">Frau</option>
+            <option value="Divers">Divers</option>
+            <option value="Keine Angabe">Keine Angabe</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="titel">Titel <span class="opt">(optional)</span></label>
+          <input type="text" id="titel" name="titel" autocomplete="honorific-prefix" placeholder="z. B. Dr., Prof.">
+        </div>
+
+        <div class="field">
+          <label for="vorname">Vorname <span class="req">*</span></label>
+          <input type="text" id="vorname" name="vorname" autocomplete="given-name" required>
+        </div>
+
+        <div class="field">
+          <label for="nachname">Nachname <span class="req">*</span></label>
+          <input type="text" id="nachname" name="nachname" autocomplete="family-name" required>
+        </div>
+
+        <div class="field">
+          <label for="firma">Firma / Institut <span class="req">*</span></label>
+          <input type="text" id="firma" name="firma" autocomplete="organization" required>
+        </div>
+
+        <div class="field">
+          <label for="funktion">Funktion <span class="req">*</span></label>
+          <input type="text" id="funktion" name="funktion" autocomplete="organization-title" required>
+        </div>
+
+        <div class="field full">
+          <label for="strasse">Straße und Hausnummer <span class="req">*</span></label>
+          <input type="text" id="strasse" name="strasse" autocomplete="street-address" required>
+        </div>
+
+        <div class="field">
+          <label for="stadt">Stadt <span class="req">*</span></label>
+          <input type="text" id="stadt" name="stadt" autocomplete="address-level2" required>
+        </div>
+
+        <div class="field">
+          <label for="plz">PLZ <span class="req">*</span></label>
+          <input type="text" id="plz" name="plz" inputmode="numeric" pattern="[0-9]{4,5}" autocomplete="postal-code" required>
+        </div>
+
+        <div class="field">
+          <label for="email">E-Mail <span class="req">*</span></label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="telefon">Telefon <span class="req">*</span></label>
+          <input type="tel" id="telefon" name="telefon" autocomplete="tel" required>
+        </div>
+
+      </div>
+
+      <div class="checkbox-field">
+        <input type="checkbox" id="datenschutz" name="datenschutz" required>
+        <label for="datenschutz">Ich habe die <a href="kontakt.html#datenschutz">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten zur Bearbeitung meiner Anmeldung zu. <span class="req">*</span></label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Verbindlich anmelden</button>
+        <a href="index.html" class="btn btn-outline-dark">Zurück</a>
+      </div>
+      <p class="form-required-hint">* Pflichtfeld</p>
+    </form>
+
+    <div class="success-box" id="successBox">
+      <div class="ic-ok"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h2>Vielen Dank für Ihre Anmeldung!</h2>
+      <p>Wir haben Ihre Angaben erhalten und senden Ihnen in Kürze eine Bestätigung per E-Mail.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="brand"><span class="mark"></span>Wirtschaftsforum Stralsund</div>
+        <p class="footer-desc">Das Wirtschaftsforum Stralsund 2026 ist eine Initiative der Hansestadt Stralsund mit Unterstützung des MakerPORT Stralsund.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Navigation</div>
+        <ul class="footer-links"><li><a href="teilnehmen.html">Teilnehmen</a></li><li><a href="absagen.html">Absagen</a></li></ul>
+      </div>
+      <div>
+        <div class="footer-heading">Rechtliches</div>
+        <ul class="footer-links"><li><a href="#impressum">Impressum</a></li><li><a href="#datenschutz">Datenschutzerklärung</a></li><li><a href="kontakt.html">Kontakt</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Wirtschaftsforum Stralsund. Alle Rechte vorbehalten.</span>
+      <span>Hansestadt Stralsund</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var burger = document.getElementById('burgerBtn');
+    var closeBtn = document.getElementById('menuCloseBtn');
+    var panel = document.getElementById('mobileMenu');
+    var backdrop = document.getElementById('menuBackdrop');
+
+    function openMenu(){
+      panel.classList.add('open');
+      backdrop.classList.add('open');
+      burger.setAttribute('aria-expanded','true');
+      document.body.style.overflow='hidden';
+      closeBtn.focus();
+    }
+    function closeMenu(){
+      panel.classList.remove('open');
+      backdrop.classList.remove('open');
+      burger.setAttribute('aria-expanded','false');
+      document.body.style.overflow='';
+      burger.focus();
+    }
+    burger.addEventListener('click', function(){
+      panel.classList.contains('open') ? closeMenu() : openMenu();
+    });
+    closeBtn.addEventListener('click', closeMenu);
+    backdrop.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && panel.classList.contains('open')) closeMenu();
+    });
+  })();
+
+  // Formular-Handling: sendet die Anmeldung direkt an Supabase
+  (function(){
+    var supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    var form = document.getElementById('anmeldeForm');
+    var successBox = document.getElementById('successBox');
+    var submitBtn = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      if(!form.checkValidity()){
+        form.reportValidity();
+        return;
+      }
+      var data = Object.fromEntries(new FormData(form).entries());
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Wird gesendet …';
+
+      var { error } = await supabase.from('participants').insert([{
+        anrede: data.anrede || null,
+        titel: data.titel || null,
+        vorname: data.vorname,
+        nachname: data.nachname,
+        firma: data.firma || null,
+        funktion: data.funktion || null,
+        strasse: data.strasse || null,
+        stadt: data.stadt || null,
+        plz: data.plz || null,
+        email: data.email,
+        telefon: data.telefon || null
+      }]);
+
+      if(error){
+        if(error.code === '23505'){
+          alert('Für diese E-Mail-Adresse liegt bereits eine Anmeldung vor.');
+        } else {
+          alert('Anmeldung konnte nicht gespeichert werden: ' + error.message);
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verbindlich anmelden';
+        return;
+      }
+
+      form.classList.add('hide');
+      successBox.classList.add('show');
+      successBox.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  })();
+</script>
+
+</body>
+</html>
