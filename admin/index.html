@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard – Wirtschaftsforum Stralsund</title>
+<link rel="stylesheet" href="../fonts.css">
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../config.js?v=2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+</script>
+
+<style>
+  :root{
+    --accent:#b5152b;--accent-dark:#8a0f21;--accent-tint:#faeaec;
+    --ink:#0d1117;--body:#3d4148;--paper:#ffffff;--gray-bg:#f4f5f7;--line:#e2e5ea;
+    --ok:#1f8a4c;--ok-tint:#e9f7ef;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',Arial,sans-serif;color:var(--body);background:var(--gray-bg);-webkit-font-smoothing:antialiased;}
+  a{color:inherit;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+
+  .login-backdrop{
+    position:fixed;inset:0;background:var(--gray-bg);display:none;
+    align-items:center;justify-content:center;z-index:200;padding:20px;
+  }
+  .login-backdrop.open{display:flex;}
+  .login-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:36px;max-width:380px;width:100%;}
+  .login-box .brand{margin-bottom:26px;}
+  .login-box h2{font-size:18px;font-weight:800;color:var(--ink);margin-bottom:22px;}
+  .login-field{margin-bottom:16px;}
+  .login-field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .login-field input{
+    width:100%;font-family:inherit;font-size:14px;color:var(--ink);padding:11px 13px;
+    border:1.5px solid var(--line);border-radius:5px;
+  }
+  .login-field input:focus{outline:none;border-color:var(--accent);}
+  .login-error{font-size:13px;color:var(--accent);margin-bottom:14px;display:none;}
+  .login-error.show{display:block;}
+  .login-submit{width:100%;justify-content:center;margin-top:6px;}
+
+  header{background:#fff;border-bottom:1px solid var(--line);padding:22px 0;}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:16px;color:var(--ink);}
+  .brand .mark{width:20px;height:20px;background:var(--accent);border-radius:3px;}
+  .brand small{display:block;font-weight:500;font-size:12px;color:#8a8f99;margin-top:2px;}
+
+  main{padding:40px 0 80px;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:28px;}
+  .stat-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:22px 24px;}
+  .stat-card .label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8a8f99;font-weight:700;}
+  .stat-card .value{font-size:34px;font-weight:800;color:var(--ink);margin-top:8px;}
+  .stat-card.accent .value{color:var(--accent);}
+  .stat-card.ok .value{color:var(--ok);}
+
+  .quick-nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:44px;}
+  .nav-btn{
+    display:inline-flex;align-items:center;gap:8px;padding:13px 20px;font-size:14px;font-weight:700;
+    border-radius:6px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;
+    transition:border-color .15s ease,background .15s ease,color .15s ease;
+  }
+  .nav-btn:hover{border-color:var(--ink);}
+  .nav-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .nav-btn .nav-count{
+    font-size:12px;font-weight:800;background:rgba(0,0,0,.08);color:inherit;
+    padding:2px 8px;border-radius:20px;
+  }
+  .nav-btn.active .nav-count{background:rgba(255,255,255,.2);}
+
+  .panel.collapsed{display:none;}
+  .overview-body{padding:28px 24px 32px;}
+  .overview-body .stats{margin-bottom:28px;}
+
+  .overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .overview-card{border:1px solid var(--line);border-radius:6px;padding:22px;}
+  .overview-card h3{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#5b6270;font-weight:800;margin-bottom:18px;}
+
+  .capacity-bar-track{
+    height:16px;border-radius:20px;background:var(--gray-bg);overflow:hidden;border:1px solid var(--line);
+  }
+  .capacity-bar-fill{
+    height:100%;border-radius:20px 0 0 20px;background:linear-gradient(90deg, var(--accent), var(--accent-dark));
+    transition:width .4s ease;width:0%;
+  }
+  .capacity-label{font-size:26px;font-weight:800;color:var(--ink);margin-top:14px;}
+  .capacity-sub{font-size:13px;color:#5b6270;margin-top:4px;}
+
+  .latest-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+  .latest-list li{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px;
+  }
+  .latest-list li:last-child{border-bottom:none;}
+  .latest-name{font-weight:700;color:var(--ink);}
+  .latest-firma{font-size:12.5px;color:#5b6270;}
+  .latest-date{font-size:12px;color:#8a8f99;white-space:nowrap;}
+  .latest-empty{padding:14px 0;color:#8a8f99;font-size:13.5px;}
+
+  @media (max-width:760px){
+    .overview-grid{grid-template-columns:1fr;}
+  }
+
+  .panel-search{
+    padding:16px 24px;border-bottom:1px solid var(--line);background:var(--gray-bg);
+  }
+  .panel-search input{
+    width:100%;max-width:360px;font-family:inherit;font-size:14px;color:var(--ink);
+    padding:10px 14px;border:1.5px solid var(--line);border-radius:5px;background:#fff;
+  }
+  .panel-search input:focus{outline:none;border-color:var(--accent);}
+  .panel-head-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+
+  section.panel{background:#fff;border:1px solid var(--line);border-radius:6px;margin-bottom:32px;overflow:hidden;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line);}
+  .panel-head h2{font-size:16px;font-weight:800;color:var(--ink);}
+  .panel-head .count{font-size:12.5px;color:#8a8f99;margin-left:8px;font-weight:600;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;padding:9px 16px;font-size:13px;font-weight:600;
+    border-radius:4px;border:1.5px solid transparent;cursor:pointer;background:none;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-outline{background:transparent;color:var(--ink);border-color:var(--line);}
+  .btn-outline:hover{border-color:var(--ink);}
+  .btn-sm{padding:6px 12px;font-size:12.5px;}
+  .btn-ok{background:var(--ok-tint);color:var(--ok);}
+  .btn-ok:hover{background:#d7f0e1;}
+  .btn-danger{background:var(--accent-tint);color:var(--accent);}
+  .btn-danger:hover{background:#f4d3d8;}
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;
+    font-weight:700;padding:12px 24px;background:var(--ink);
+  }
+  tbody td{padding:14px 24px;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink);vertical-align:middle;}
+  tbody tr:nth-child(even){background:var(--gray-bg);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--accent-tint);}
+  .name-cell{font-weight:800;color:var(--ink);}
+  .sub{font-size:12.5px;color:#5b6270;margin-top:2px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;border:1px solid transparent;}
+  .badge.in{background:var(--ok-tint);color:var(--ok);border-color:#bfe6cf;}
+  .badge.out{background:var(--gray-bg);color:#5b6270;border-color:var(--line);}
+  .actions-cell{display:flex;gap:8px;flex-wrap:wrap;}
+  .empty{padding:40px 24px;text-align:center;color:#8a8f99;font-size:14px;}
+
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(4,24,46,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .modal-backdrop.open{display:flex;}
+  .modal{background:#fff;border-radius:8px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:30px;}
+  .modal h3{font-size:18px;font-weight:800;color:var(--ink);margin-bottom:20px;}
+  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .modal-grid .full{grid-column:1/-1;}
+  .modal label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:5px;}
+  .modal input,.modal select{
+    width:100%;font-family:inherit;font-size:14px;color:var(--ink);padding:10px 12px;
+    border:1.5px solid var(--line);border-radius:4px;
+  }
+  .modal input:focus,.modal select:focus{outline:none;border-color:var(--accent);}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+  .modal-error{font-size:13px;color:var(--accent);margin-top:10px;display:none;}
+  .modal-error.show{display:block;}
+
+  @media (max-width:760px){
+    .stats{grid-template-columns:1fr;}
+    thead{display:none;}
+    tbody td{display:flex;justify-content:space-between;gap:12px;padding:10px 20px;border-bottom:none;}
+    tbody td::before{content:attr(data-label);font-weight:700;color:var(--ink);font-size:12px;}
+    tbody tr{border-bottom:1px solid var(--line);padding:8px 0;}
+    .modal-grid{grid-template-columns:1fr;}
+  }
+
+  /* ================= Barrierefreiheit: Zustände ================= */
+  html.a11y-contrast body{background:#000 !important;color:#fff !important;}
+  html.a11y-contrast{--ink:#fff;--body:#f0f0f0;--line:#444;--gray-bg:#111;--paper:#000;--accent:#ffd400;--accent-dark:#ffe45c;--accent-tint:#332b00;}
+  html.a11y-contrast header{background:#000 !important;border-color:#444 !important;}
+  html.a11y-contrast .field input,html.a11y-contrast .field select{background:#000;color:#fff;}
+  html.a11y-underline a{text-decoration:underline !important;}
+  html.a11y-bigcursor,html.a11y-bigcursor *{cursor:pointer !important;}
+  html.a11y-fs-1 body{font-size:107%;}
+  html.a11y-fs-2 body{font-size:116%;}
+  html.a11y-fs-3 body{font-size:128%;}
+  html.a11y-calm *,html.a11y-calm *::before,html.a11y-calm *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}
+  html.a11y-readable body{line-height:1.9 !important;letter-spacing:.01em !important;}
+  html.a11y-readable p{max-width:70ch;}
+
+  /* ================= Barrierefreiheits-Widget ================= */
+  .a11y-toggle{
+    position:fixed;right:20px;bottom:20px;z-index:220;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--ink,#0d1117);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    transition:transform .15s ease,background .15s ease;
+  }
+  .a11y-toggle:hover{background:var(--accent,#b5152b);transform:translateY(-2px);}
+  .a11y-toggle:focus-visible{outline:2px solid var(--accent,#b5152b);outline-offset:3px;}
+  .a11y-toggle svg{width:26px;height:26px;}
+
+  .a11y-panel{
+    position:fixed;right:20px;bottom:82px;z-index:220;
+    width:300px;max-width:calc(100vw - 40px);max-height:calc(100vh - 120px);overflow-y:auto;
+    background:#fff;border:1px solid var(--line,#e2e5ea);border-radius:10px;
+    box-shadow:0 16px 40px rgba(0,0,0,.18);
+    padding:20px;display:none;
+  }
+  .a11y-panel.open{display:block;}
+  .a11y-panel h2{font-size:14px;font-weight:800;color:var(--ink,#0d1117);margin-bottom:4px;}
+  .a11y-panel .a11y-sub{font-size:12px;color:#8a8f99;margin-bottom:14px;}
+  .a11y-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line,#e2e5ea);}
+  .a11y-row:first-of-type{border-top:none;}
+  .a11y-row span{font-size:13px;font-weight:600;color:var(--ink,#0d1117);}
+  .a11y-btnrow{display:flex;gap:6px;}
+  .a11y-btnrow button, .a11y-switch{
+    font-family:inherit;font-size:12px;font-weight:700;
+    border:1.5px solid var(--line,#e2e5ea);background:#fff;color:var(--ink,#0d1117);
+    border-radius:5px;padding:6px 10px;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .a11y-btnrow button:hover,.a11y-switch:hover{border-color:var(--accent,#b5152b);}
+  .a11y-switch[aria-pressed="true"]{background:var(--accent,#b5152b);border-color:var(--accent,#b5152b);color:#fff;}
+  .a11y-reset{margin-top:14px;width:100%;font-family:inherit;font-size:12.5px;font-weight:700;padding:9px;border-radius:5px;border:1.5px solid var(--line,#e2e5ea);background:var(--gray-bg,#f4f5f7);color:var(--ink,#0d1117);cursor:pointer;}
+  .a11y-reset:hover{border-color:var(--accent,#b5152b);}
+  .a11y-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;line-height:1;cursor:pointer;color:#8a8f99;padding:4px;}
+
+  /* ================= Cookie-Banner ================= */
+  .cookie-banner{
+    position:fixed;left:0;right:0;bottom:0;z-index:230;
+    background:var(--ink,#0d1117);color:#fff;
+    padding:20px 24px;
+    display:none;
+    box-shadow:0 -8px 24px rgba(0,0,0,.18);
+  }
+  .cookie-banner.show{display:block;}
+  .cookie-inner{
+    max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+    gap:24px;flex-wrap:wrap;
+  }
+  .cookie-text{font-size:13.5px;line-height:1.6;color:#c7cdd6;max-width:640px;flex:1;min-width:240px;}
+  .cookie-text a{color:#fff;text-decoration:underline;font-weight:600;}
+  .cookie-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .cookie-actions button{
+    font-family:inherit;font-size:13px;font-weight:700;padding:11px 18px;border-radius:4px;cursor:pointer;
+    border:1.5px solid transparent;transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .cookie-accept{background:var(--accent,#b5152b);color:#fff;}
+  .cookie-accept:hover{background:var(--accent-dark,#8a0f21);}
+  .cookie-necessary{background:transparent;color:#fff;border-color:rgba(255,255,255,.35);}
+  .cookie-necessary:hover{border-color:#fff;}
+
+  @media (max-width:640px){
+    .a11y-panel{right:12px;left:12px;width:auto;bottom:78px;}
+    .a11y-toggle{right:14px;bottom:14px;}
+    .cookie-banner{padding:18px 16px;}
+  }
+
+</style>
+</head>
+<body>
+
+<div class="login-backdrop open" id="loginBackdrop">
+  <div class="login-box">
+    <div class="brand">
+      <span class="mark"></span>
+      Wirtschaftsforum Stralsund
+    </div>
+    <h2>Admin-Login</h2>
+    <form id="loginForm">
+      <div class="login-field">
+        <label for="loginEmail">E-Mail</label>
+        <input type="email" id="loginEmail" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label for="loginPassword">Passwort</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <p class="login-error" id="loginError"></p>
+      <button type="submit" class="btn btn-primary login-submit">Anmelden</button>
+    </form>
+  </div>
+</div>
+
+<header>
+  <div class="wrap header-inner">
+    <div class="brand">
+      <span class="mark"></span>
+      Wirtschaftsforum Stralsund
+      <small>Admin-Dashboard</small>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="../index.html" class="btn btn-outline btn-sm">Zur Website</a>
+      <button class="btn btn-outline btn-sm" id="logoutBtn" style="display:none;">Abmelden</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="appMain" style="display:none;">
+
+  <div class="quick-nav">
+    <button class="nav-btn active" id="navOverviewBtn" data-target="overviewPanel">
+      Übersicht
+    </button>
+    <button class="nav-btn" id="navParticipantsBtn" data-target="participantsPanel">
+      Teilnehmendenliste <span class="nav-count" id="navParticipantsCount">0</span>
+    </button>
+    <button class="nav-btn" id="navCancellationsBtn" data-target="cancellationsPanel">
+      Absagenliste <span class="nav-count" id="navCancellationsCount">0</span>
+    </button>
+    <button class="nav-btn" id="navWaitlistBtn" data-target="waitlistPanel">
+      Warteliste <span class="nav-count" id="navWaitlistCount">0</span>
+    </button>
+  </div>
+
+  <section class="panel" id="overviewPanel">
+    <div class="panel-head">
+      <h2>Übersicht</h2>
+    </div>
+    <div class="overview-body">
+      <div class="stats">
+        <div class="stat-card accent">
+          <div class="label">Anmeldungen</div>
+          <div class="value" id="statParticipants">–</div>
+        </div>
+        <div class="stat-card ok">
+          <div class="label">Eingecheckt</div>
+          <div class="value" id="statCheckedIn">–</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Absagen</div>
+          <div class="value" id="statCancellations">–</div>
+        </div>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <h3>Auslastung</h3>
+          <div class="capacity-bar-track">
+            <div class="capacity-bar-fill" id="capacityFill"></div>
+          </div>
+          <div class="capacity-label" id="capacityLabel">–</div>
+          <div class="capacity-sub" id="capacitySub"></div>
+        </div>
+        <div class="overview-card">
+          <h3>Neueste Anmeldungen</h3>
+          <ul class="latest-list" id="latestList"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel collapsed" id="participantsPanel">
+    <div class="panel-head">
+      <h2>Teilnehmendenliste <span class="count" id="participantsCount"></span></h2>
+      <div class="panel-head-actions">
+        <button class="btn btn-outline btn-sm" id="exportParticipantsBtn">⭳ Als Excel exportieren</button>
+        <button class="btn btn-primary btn-sm" id="addPersonBtn">+ Person hinzufügen</button>
+      </div>
+    </div>
+    <div class="panel-search">
+      <input type="text" id="participantsSearch" placeholder="Suche nach Name, E-Mail oder Firma …">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Firma / Funktion</th>
+          <th>Kontakt</th>
+          <th>Status</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="participantsBody"></tbody>
+    </table>
+    <div class="empty" id="participantsEmpty" style="display:none;">Noch keine Anmeldungen.</div>
+  </section>
+
+  <section class="panel collapsed" id="cancellationsPanel">
+    <div class="panel-head">
+      <h2>Absagenliste <span class="count" id="cancellationsCount"></span></h2>
+      <div class="panel-head-actions">
+        <button class="btn btn-outline btn-sm" id="exportCancellationsBtn">⭳ Als Excel exportieren</button>
+      </div>
+    </div>
+    <div class="panel-search">
+      <input type="text" id="cancellationsSearch" placeholder="Suche nach Name oder E-Mail …">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>E-Mail</th>
+          <th>Abgesagt am</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="cancellationsBody"></tbody>
+    </table>
+    <div class="empty" id="cancellationsEmpty" style="display:none;">Noch keine Absagen.</div>
+  </section>
+
+  <section class="panel collapsed" id="waitlistPanel">
+    <div class="panel-head">
+      <h2>Warteliste <span class="count" id="waitlistCount"></span></h2>
+      <div class="panel-head-actions">
+        <button class="btn btn-outline btn-sm" id="exportWaitlistBtn">⭳ Als Excel exportieren</button>
+      </div>
+    </div>
+    <div class="panel-search">
+      <input type="text" id="waitlistSearch" placeholder="Suche nach Name, E-Mail oder Firma …">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Firma</th>
+          <th>Kontakt</th>
+          <th>Auf Warteliste seit</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="waitlistBody"></tbody>
+    </table>
+    <div class="empty" id="waitlistEmpty" style="display:none;">Die Warteliste ist aktuell leer.</div>
+  </section>
+
+</main>
+
+<!-- Modal: Person hinzufügen -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Person hinzufügen</h3>
+    <form id="addPersonForm">
+      <div class="modal-grid">
+        <div>
+          <label for="m_anrede">Anrede</label>
+          <select id="m_anrede" name="anrede">
+            <option value="">–</option>
+            <option value="Herr">Herr</option>
+            <option value="Frau">Frau</option>
+            <option value="Divers">Divers</option>
+          </select>
+        </div>
+        <div>
+          <label for="m_titel">Titel</label>
+          <input type="text" id="m_titel" name="titel">
+        </div>
+        <div>
+          <label for="m_vorname">Vorname *</label>
+          <input type="text" id="m_vorname" name="vorname" required>
+        </div>
+        <div>
+          <label for="m_nachname">Nachname *</label>
+          <input type="text" id="m_nachname" name="nachname" required>
+        </div>
+        <div>
+          <label for="m_firma">Firma / Institut</label>
+          <input type="text" id="m_firma" name="firma">
+        </div>
+        <div>
+          <label for="m_funktion">Funktion</label>
+          <input type="text" id="m_funktion" name="funktion">
+        </div>
+        <div class="full">
+          <label for="m_strasse">Straße und Hausnummer</label>
+          <input type="text" id="m_strasse" name="strasse">
+        </div>
+        <div>
+          <label for="m_stadt">Stadt</label>
+          <input type="text" id="m_stadt" name="stadt">
+        </div>
+        <div>
+          <label for="m_plz">PLZ</label>
+          <input type="text" id="m_plz" name="plz">
+        </div>
+        <div>
+          <label for="m_email">E-Mail *</label>
+          <input type="email" id="m_email" name="email" required>
+        </div>
+        <div>
+          <label for="m_telefon">Telefon</label>
+          <input type="tel" id="m_telefon" name="telefon">
+        </div>
+      </div>
+      <p class="modal-error" id="modalError"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="modalCancelBtn">Abbrechen</button>
+        <button type="submit" class="btn btn-primary">Hinzufügen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     DATA LAYER – hier später gegen Supabase austauschen
+     ============================================================
+     Jede Funktion unten entspricht 1:1 einer künftigen Supabase-Query.
+     Die Kommentare zeigen jeweils, wie der Supabase-Aufruf aussehen wird.
+  ============================================================ */
+
+  /* ============================================================
+     DATA LAYER – echte Supabase-Anbindung
+     ============================================================
+     Die Tabellen nutzen snake_case-Spalten (checked_in, created_at),
+     die UI-Logik weiter unten arbeitet mit camelCase (checkedIn, createdAt).
+     Die map...FromDb()-Helfer übersetzen zwischen beiden Welten.
+  ============================================================ */
+
+  function mapParticipantFromDb(row){
+    return {
+      id: row.id, anrede: row.anrede || '', titel: row.titel || '',
+      vorname: row.vorname, nachname: row.nachname, firma: row.firma || '',
+      funktion: row.funktion || '', strasse: row.strasse || '', stadt: row.stadt || '',
+      plz: row.plz || '', email: row.email, telefon: row.telefon || '',
+      checkedIn: row.checked_in, createdAt: row.created_at
+    };
+  }
+  function mapCancellationFromDb(row){
+    return { id: row.id, vorname: row.vorname || '', nachname: row.nachname || '', email: row.email, createdAt: row.created_at };
+  }
+  function mapWaitlistFromDb(row){
+    return { id: row.id, vorname: row.vorname, nachname: row.nachname, firma: row.firma || '', email: row.email, telefon: row.telefon || '', createdAt: row.created_at };
+  }
+
+  // Maximale Teilnehmerzahl der Veranstaltung – für das Auslastungsdiagramm.
+  // Bei Bedarf anpassen.
+  const EVENT_CAPACITY = 150;
+
+  async function fetchStats(){
+    const [pRes, cInRes, cancRes] = await Promise.all([
+      supabase.from('participants').select('*', { count:'exact', head:true }),
+      supabase.from('participants').select('*', { count:'exact', head:true }).eq('checked_in', true),
+      supabase.from('cancellations').select('*', { count:'exact', head:true })
+    ]);
+    return {
+      participants: pRes.count || 0,
+      checkedIn: cInRes.count || 0,
+      cancellations: cancRes.count || 0
+    };
+  }
+
+  async function fetchParticipants(){
+    const { data, error } = await supabase.from('participants').select('*').order('nachname');
+    if (error) { console.error(error); return []; }
+    return data.map(mapParticipantFromDb);
+  }
+
+  async function fetchCancellations(){
+    const { data, error } = await supabase.from('cancellations').select('*').order('created_at', { ascending:false });
+    if (error) { console.error(error); return []; }
+    return data.map(mapCancellationFromDb);
+  }
+
+  async function fetchWaitlist(){
+    const { data, error } = await supabase.from('waitlist').select('*').order('created_at');
+    if (error) { console.error(error); return []; }
+    return data.map(mapWaitlistFromDb);
+  }
+
+  async function addParticipant(data){
+    const { error } = await supabase.from('participants').insert([{
+      anrede: data.anrede || null, titel: data.titel || null,
+      vorname: data.vorname, nachname: data.nachname,
+      firma: data.firma || null, funktion: data.funktion || null,
+      strasse: data.strasse || null, stadt: data.stadt || null, plz: data.plz || null,
+      email: data.email, telefon: data.telefon || null
+    }]);
+    if (error) {
+      if (error.code === '23505') throw new Error('Für diese E-Mail-Adresse liegt bereits eine Anmeldung vor.');
+      throw new Error(error.message);
+    }
+  }
+
+  async function toggleCheckin(id){
+    const { data: row, error: selErr } = await supabase.from('participants').select('checked_in').eq('id', id).single();
+    if (selErr) throw new Error(selErr.message);
+    const { error } = await supabase.from('participants').update({ checked_in: !row.checked_in }).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async function cancelParticipant(id){
+    const { data: p, error: selErr } = await supabase.from('participants').select('vorname,nachname,email').eq('id', id).single();
+    if (selErr) throw new Error(selErr.message);
+    const { error: insErr } = await supabase.from('cancellations').insert([{ vorname: p.vorname, nachname: p.nachname, email: p.email }]);
+    if (insErr) throw new Error(insErr.message);
+    const { error: delErr } = await supabase.from('participants').delete().eq('id', id);
+    if (delErr) throw new Error(delErr.message);
+  }
+
+  async function deleteCancellation(id){
+    const { error } = await supabase.from('cancellations').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async function promoteFromWaitlist(id){
+    const { data: w, error: selErr } = await supabase.from('waitlist').select('*').eq('id', id).single();
+    if (selErr) throw new Error(selErr.message);
+    const { error: insErr } = await supabase.from('participants').insert([{
+      vorname: w.vorname, nachname: w.nachname, firma: w.firma, email: w.email, telefon: w.telefon
+    }]);
+    // 23505 = für diese E-Mail existiert schon eine Anmeldung – Wartelisten-Eintrag trotzdem entfernen
+    if (insErr && insErr.code !== '23505') throw new Error(insErr.message);
+    const { error: delErr } = await supabase.from('waitlist').delete().eq('id', id);
+    if (delErr) throw new Error(delErr.message);
+  }
+
+  async function deleteWaitlistEntry(id){
+    const { error } = await supabase.from('waitlist').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  /* ============================================================
+     UI-LOGIK – ab hier normalerweise nichts anpassen
+  ============================================================ */
+
+  let currentParticipants = [];
+  let currentCancellations = [];
+  let currentWaitlist = [];
+  let participantsSearchTerm = '';
+  let cancellationsSearchTerm = '';
+  let waitlistSearchTerm = '';
+
+  async function loadAll(){
+    const [stats, plist, clist, wlist] = await Promise.all([
+      fetchStats(), fetchParticipants(), fetchCancellations(), fetchWaitlist()
+    ]);
+    currentParticipants = plist;
+    currentCancellations = clist;
+    currentWaitlist = wlist;
+    renderStats(stats);
+    renderParticipants();
+    renderCancellations();
+    renderWaitlist();
+    renderCapacity();
+    renderLatestRegistrations();
+  }
+
+  function renderCapacity(){
+    const count = currentParticipants.length;
+    const pct = Math.min(100, Math.round((count / EVENT_CAPACITY) * 100));
+    const fill = document.getElementById('capacityFill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct >= 90
+      ? 'linear-gradient(90deg, var(--accent), var(--accent-dark))'
+      : (pct >= 60 ? 'linear-gradient(90deg, #d98a1f, #b5691a)' : 'linear-gradient(90deg, var(--ok), #166b3a)');
+    document.getElementById('capacityLabel').textContent = pct + '% belegt';
+    const free = Math.max(0, EVENT_CAPACITY - count);
+    document.getElementById('capacitySub').textContent =
+      count + ' von ' + EVENT_CAPACITY + ' Plätzen angemeldet · ' + free + ' Plätze frei';
+  }
+
+  function renderLatestRegistrations(){
+    const list = [...currentParticipants]
+      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
+    const el = document.getElementById('latestList');
+    if(!list.length){
+      el.innerHTML = '<li class="latest-empty">Noch keine Anmeldungen.</li>';
+      return;
+    }
+    el.innerHTML = list.map(p => `
+      <li>
+        <div>
+          <div class="latest-name">${esc(p.vorname)} ${esc(p.nachname)}</div>
+          <div class="latest-firma">${esc(p.firma) || '–'}</div>
+        </div>
+        <div class="latest-date">${new Date(p.createdAt).toLocaleDateString('de-DE')}</div>
+      </li>
+    `).join('');
+  }
+
+  function renderStats(s){
+    document.getElementById('statParticipants').textContent = s.participants;
+    document.getElementById('statCheckedIn').textContent = s.checkedIn;
+    document.getElementById('statCancellations').textContent = s.cancellations;
+  }
+
+  function esc(str){
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  function renderParticipants(){
+    const term = participantsSearchTerm.trim().toLowerCase();
+    const list = !term ? currentParticipants : currentParticipants.filter(p => {
+      const haystack = [p.anrede, p.titel, p.vorname, p.nachname, p.email, p.firma].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+
+    const body = document.getElementById('participantsBody');
+    const empty = document.getElementById('participantsEmpty');
+    document.getElementById('participantsCount').textContent = '(' + list.length + ' von ' + currentParticipants.length + ')';
+    document.getElementById('navParticipantsCount').textContent = currentParticipants.length;
+
+    if(!list.length){
+      body.innerHTML='';
+      empty.style.display='block';
+      empty.textContent = currentParticipants.length ? 'Keine Treffer für diese Suche.' : 'Noch keine Anmeldungen.';
+      return;
+    }
+    empty.style.display='none';
+    body.innerHTML = list.map(p => `
+      <tr>
+        <td data-label="Name">
+          <div class="name-cell">${esc(p.titel)} ${esc(p.vorname)} ${esc(p.nachname)}</div>
+        </td>
+        <td data-label="Firma / Funktion">
+          ${esc(p.firma) || '–'}<div class="sub">${esc(p.funktion) || ''}</div>
+        </td>
+        <td data-label="Kontakt">
+          ${esc(p.email)}<div class="sub">${esc(p.telefon) || ''}</div>
+        </td>
+        <td data-label="Status">
+          <span class="badge ${p.checkedIn ? 'in':'out'}">${p.checkedIn ? '✓ Eingecheckt' : 'Nicht eingecheckt'}</span>
+        </td>
+        <td data-label="Aktionen">
+          <div class="actions-cell">
+            <button class="btn btn-sm ${p.checkedIn ? 'btn-outline' : 'btn-ok'}" data-checkin="${p.id}">
+              ${p.checkedIn ? 'Check-in zurücksetzen' : 'Check-in'}
+            </button>
+            <button class="btn btn-sm btn-danger" data-cancel="${p.id}">Absagen</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderCancellations(){
+    const term = cancellationsSearchTerm.trim().toLowerCase();
+    const list = !term ? currentCancellations : currentCancellations.filter(c => {
+      const haystack = [c.vorname, c.nachname, c.email].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+
+    const body = document.getElementById('cancellationsBody');
+    const empty = document.getElementById('cancellationsEmpty');
+    document.getElementById('cancellationsCount').textContent = '(' + list.length + ' von ' + currentCancellations.length + ')';
+    document.getElementById('navCancellationsCount').textContent = currentCancellations.length;
+
+    if(!list.length){
+      body.innerHTML='';
+      empty.style.display='block';
+      empty.textContent = currentCancellations.length ? 'Keine Treffer für diese Suche.' : 'Noch keine Absagen.';
+      return;
+    }
+    empty.style.display='none';
+    body.innerHTML = list.map(c => `
+      <tr>
+        <td data-label="Name">${esc(c.vorname)} ${esc(c.nachname)}</td>
+        <td data-label="E-Mail">${esc(c.email)}</td>
+        <td data-label="Abgesagt am">${new Date(c.createdAt).toLocaleString('de-DE')}</td>
+        <td data-label="Aktionen">
+          <button class="btn btn-sm btn-outline" data-delcancel="${c.id}">Entfernen</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderWaitlist(){
+    const term = waitlistSearchTerm.trim().toLowerCase();
+    const list = !term ? currentWaitlist : currentWaitlist.filter(w => {
+      const haystack = [w.vorname, w.nachname, w.email, w.firma].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+
+    const body = document.getElementById('waitlistBody');
+    const empty = document.getElementById('waitlistEmpty');
+    document.getElementById('waitlistCount').textContent = '(' + list.length + ' von ' + currentWaitlist.length + ')';
+    document.getElementById('navWaitlistCount').textContent = currentWaitlist.length;
+
+    if(!list.length){
+      body.innerHTML='';
+      empty.style.display='block';
+      empty.textContent = currentWaitlist.length ? 'Keine Treffer für diese Suche.' : 'Die Warteliste ist aktuell leer.';
+      return;
+    }
+    empty.style.display='none';
+    body.innerHTML = list.map(w => `
+      <tr>
+        <td data-label="Name"><div class="name-cell">${esc(w.vorname)} ${esc(w.nachname)}</div></td>
+        <td data-label="Firma">${esc(w.firma) || '–'}</td>
+        <td data-label="Kontakt">${esc(w.email)}<div class="sub">${esc(w.telefon) || ''}</div></td>
+        <td data-label="Auf Warteliste seit">${new Date(w.createdAt).toLocaleDateString('de-DE')}</td>
+        <td data-label="Aktionen">
+          <div class="actions-cell">
+            <button class="btn btn-sm btn-ok" data-promote="${w.id}">Zu Teilnehmenden</button>
+            <button class="btn btn-sm btn-danger" data-delwaitlist="${w.id}">Entfernen</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('participantsSearch').addEventListener('input', (e) => {
+    participantsSearchTerm = e.target.value;
+    renderParticipants();
+  });
+  document.getElementById('cancellationsSearch').addEventListener('input', (e) => {
+    cancellationsSearchTerm = e.target.value;
+    renderCancellations();
+  });
+  document.getElementById('waitlistSearch').addEventListener('input', (e) => {
+    waitlistSearchTerm = e.target.value;
+    renderWaitlist();
+  });
+
+  // Quick-Nav: immer nur eine Liste gleichzeitig anzeigen
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const panel = document.getElementById(targetId);
+      const isOpen = !panel.classList.contains('collapsed');
+
+      // alle Panels schließen und alle Buttons deaktivieren
+      document.querySelectorAll('.panel').forEach(p => p.classList.add('collapsed'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      // angeklicktes Panel öffnen, außer es war bereits offen (dann bleibt es zu)
+      if(!isOpen){
+        panel.classList.remove('collapsed');
+        btn.classList.add('active');
+        panel.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    });
+  });
+
+  // Excel-Export
+  function exportToExcel(rows, filename, sheetName){
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, filename);
+  }
+
+  document.getElementById('exportParticipantsBtn').addEventListener('click', () => {
+    const rows = currentParticipants.map(p => ({
+      'Titel': p.titel, 'Vorname': p.vorname, 'Nachname': p.nachname,
+      'Firma / Institut': p.firma, 'Funktion': p.funktion,
+      'Straße und Hausnummer': p.strasse, 'Stadt': p.stadt, 'PLZ': p.plz,
+      'E-Mail': p.email, 'Telefon': p.telefon,
+      'Eingecheckt': p.checkedIn ? 'Ja' : 'Nein',
+      'Angemeldet am': new Date(p.createdAt).toLocaleString('de-DE')
+    }));
+    exportToExcel(rows, 'teilnehmerliste.xlsx', 'Teilnehmende');
+  });
+
+  document.getElementById('exportCancellationsBtn').addEventListener('click', () => {
+    const rows = currentCancellations.map(c => ({
+      'Vorname': c.vorname, 'Nachname': c.nachname, 'E-Mail': c.email,
+      'Abgesagt am': new Date(c.createdAt).toLocaleString('de-DE')
+    }));
+    exportToExcel(rows, 'absagenliste.xlsx', 'Absagen');
+  });
+
+  document.getElementById('exportWaitlistBtn').addEventListener('click', () => {
+    const rows = currentWaitlist.map(w => ({
+      'Vorname': w.vorname, 'Nachname': w.nachname, 'Firma': w.firma,
+      'E-Mail': w.email, 'Telefon': w.telefon,
+      'Auf Warteliste seit': new Date(w.createdAt).toLocaleString('de-DE')
+    }));
+    exportToExcel(rows, 'warteliste.xlsx', 'Warteliste');
+  });
+
+  document.addEventListener('click', async (e) => {
+    const checkinId = e.target.getAttribute('data-checkin');
+    const cancelId = e.target.getAttribute('data-cancel');
+    const delCancelId = e.target.getAttribute('data-delcancel');
+    const promoteId = e.target.getAttribute('data-promote');
+    const delWaitlistId = e.target.getAttribute('data-delwaitlist');
+
+    try{
+      if(checkinId){
+        await toggleCheckin(checkinId);
+        loadAll();
+      }
+      if(cancelId){
+        if(confirm('Diese Person wirklich absagen? Sie wird von der Teilnehmendenliste in die Absagenliste verschoben.')){
+          await cancelParticipant(cancelId);
+          loadAll();
+        }
+      }
+      if(delCancelId){
+        if(confirm('Diesen Absage-Eintrag entfernen?')){
+          await deleteCancellation(delCancelId);
+          loadAll();
+        }
+      }
+      if(promoteId){
+        if(confirm('Diese Person von der Warteliste zur Teilnehmendenliste verschieben?')){
+          await promoteFromWaitlist(promoteId);
+          loadAll();
+        }
+      }
+      if(delWaitlistId){
+        if(confirm('Diesen Wartelisten-Eintrag entfernen?')){
+          await deleteWaitlistEntry(delWaitlistId);
+          loadAll();
+        }
+      }
+    }catch(err){
+      alert('Ein Fehler ist aufgetreten: ' + err.message);
+    }
+  });
+
+  // Modal: Person hinzufügen
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const addPersonForm = document.getElementById('addPersonForm');
+  const modalError = document.getElementById('modalError');
+
+  document.getElementById('addPersonBtn').addEventListener('click', () => {
+    addPersonForm.reset();
+    modalError.classList.remove('show');
+    modalBackdrop.classList.add('open');
+  });
+  document.getElementById('modalCancelBtn').addEventListener('click', () => {
+    modalBackdrop.classList.remove('open');
+  });
+  modalBackdrop.addEventListener('click', (e) => {
+    if(e.target === modalBackdrop) modalBackdrop.classList.remove('open');
+  });
+
+  addPersonForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(addPersonForm).entries());
+    try{
+      await addParticipant(data);
+      modalBackdrop.classList.remove('open');
+      loadAll();
+    }catch(err){
+      modalError.textContent = err.message || 'Ein Fehler ist aufgetreten.';
+      modalError.classList.add('show');
+    }
+  });
+
+  /* ============================================================
+     AUTH – Zugriff aufs Dashboard nur für eingeloggte Admin-Nutzer:innen
+  ============================================================ */
+
+  async function showApp(){
+    document.getElementById('loginBackdrop').classList.remove('open');
+    document.getElementById('appMain').style.display = '';
+    document.getElementById('logoutBtn').style.display = '';
+    loadAll();
+  }
+
+  async function showLogin(){
+    document.getElementById('appMain').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'none';
+    document.getElementById('loginBackdrop').classList.add('open');
+  }
+
+  async function checkAuth(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) { showApp(); } else { showLogin(); }
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      errEl.textContent = 'Login fehlgeschlagen: ' + error.message;
+      errEl.classList.add('show');
+      return;
+    }
+    errEl.classList.remove('show');
+    showApp();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    showLogin();
+  });
+
+  checkAuth();
+</script>
+
+
+<!-- ===== Barrierefreiheits-Widget ===== -->
+<button class="a11y-toggle" id="a11yToggle" aria-label="Barrierefreiheits-Einstellungen öffnen" aria-expanded="false" aria-controls="a11yPanel">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M4 8.5c2.5 1 5.3 1.5 8 1.5s5.5-.5 8-1.5M12 10v11M12 15l-3.5 6M12 15l3.5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-modal="false" aria-labelledby="a11yPanelTitle">
+  <button class="a11y-close" id="a11yClose" aria-label="Einstellungen schließen">&times;</button>
+  <h2 id="a11yPanelTitle">Barrierefreiheit</h2>
+  <p class="a11y-sub">Einstellungen werden lokal in Ihrem Browser gespeichert.</p>
+
+  <div class="a11y-row">
+    <span>Schriftgröße</span>
+    <div class="a11y-btnrow">
+      <button type="button" id="a11yFontMinus" aria-label="Schrift verkleinern">A−</button>
+      <button type="button" id="a11yFontPlus" aria-label="Schrift vergrößern">A+</button>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <span>Starker Kontrast</span>
+    <button type="button" class="a11y-switch" id="a11yContrast" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Links unterstreichen</span>
+    <button type="button" class="a11y-switch" id="a11yUnderline" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Lesefreundlicher Abstand</span>
+    <button type="button" class="a11y-switch" id="a11yReadable" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Animationen reduzieren</span>
+    <button type="button" class="a11y-switch" id="a11yCalm" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Großer Mauszeiger</span>
+    <button type="button" class="a11y-switch" id="a11yCursor" aria-pressed="false">An</button>
+  </div>
+
+  <button type="button" class="a11y-reset" id="a11yReset">Alle Einstellungen zurücksetzen</button>
+</div>
+
+<!-- ===== Cookie-Banner ===== -->
+<div class="cookie-banner" id="cookieBanner" role="region" aria-label="Cookie-Hinweis">
+  <div class="cookie-inner">
+    <p class="cookie-text">
+      Wir verwenden ausschließlich technisch notwendige Cookies bzw. lokale Speicherung
+      (u. a. für Ihre Cookie-Auswahl, Ihre Barrierefreiheits-Einstellungen sowie – im
+      passwortgeschützten Admin-Bereich – Ihre Anmeldesitzung). Es findet kein Tracking und
+      keine Analyse Ihres Verhaltens statt. Details in unserer
+      <a href="../datenschutz.html">Datenschutzerklärung</a>.
+    </p>
+    <div class="cookie-actions">
+      <button type="button" class="cookie-necessary" id="cookieNecessary">Nur notwendige</button>
+      <button type="button" class="cookie-accept" id="cookieAccept">Verstanden</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // ===== Barrierefreiheit =====
+  var root = document.documentElement;
+  var KEY = 'wfs_a11y';
+  var FS_KEY = 'wfs_a11y_fs';
+  var toggles = {
+    a11yContrast:'a11y-contrast',
+    a11yUnderline:'a11y-underline',
+    a11yReadable:'a11y-readable',
+    a11yCalm:'a11y-calm',
+    a11yCursor:'a11y-bigcursor'
+  };
+
+  function loadState(){
+    var raw;
+    try{ raw = JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){ raw = {}; }
+    Object.keys(toggles).forEach(function(id){
+      var cls = toggles[id];
+      var on = !!raw[id];
+      root.classList.toggle(cls, on);
+      var btn = document.getElementById(id);
+      if(btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var fs = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(fs);
+  }
+
+  function saveState(){
+    var raw = {};
+    Object.keys(toggles).forEach(function(id){
+      raw[id] = root.classList.contains(toggles[id]);
+    });
+    localStorage.setItem(KEY, JSON.stringify(raw));
+  }
+
+  function applyFontSize(step){
+    step = Math.max(0, Math.min(3, step));
+    for(var i=1;i<=3;i++){ root.classList.remove('a11y-fs-'+i); }
+    if(step > 0) root.classList.add('a11y-fs-'+step);
+    localStorage.setItem(FS_KEY, String(step));
+  }
+
+  loadState();
+
+  var panel = document.getElementById('a11yPanel');
+  var toggleBtn = document.getElementById('a11yToggle');
+  var closeBtn = document.getElementById('a11yClose');
+
+  function openPanel(){
+    panel.classList.add('open');
+    toggleBtn.setAttribute('aria-expanded','true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    toggleBtn.setAttribute('aria-expanded','false');
+  }
+  if(toggleBtn){
+    toggleBtn.addEventListener('click', function(){
+      panel.classList.contains('open') ? closePanel() : openPanel();
+    });
+  }
+  if(closeBtn) closeBtn.addEventListener('click', closePanel);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closePanel();
+  });
+  document.addEventListener('click', function(e){
+    if(panel && panel.classList.contains('open') && !panel.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)){
+      closePanel();
+    }
+  });
+
+  Object.keys(toggles).forEach(function(id){
+    var btn = document.getElementById(id);
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+      var cls = toggles[id];
+      var on = !root.classList.contains(cls);
+      root.classList.toggle(cls, on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      saveState();
+    });
+  });
+
+  var fsMinus = document.getElementById('a11yFontMinus');
+  var fsPlus = document.getElementById('a11yFontPlus');
+  if(fsMinus) fsMinus.addEventListener('click', function(){
+    var cur = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(cur - 1);
+  });
+  if(fsPlus) fsPlus.addEventListener('click', function(){
+    var cur = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(cur + 1);
+  });
+
+  var resetBtn = document.getElementById('a11yReset');
+  if(resetBtn) resetBtn.addEventListener('click', function(){
+    Object.keys(toggles).forEach(function(id){
+      root.classList.remove(toggles[id]);
+      var btn = document.getElementById(id);
+      if(btn) btn.setAttribute('aria-pressed','false');
+    });
+    applyFontSize(0);
+    saveState();
+  });
+
+  // ===== Cookie-Banner =====
+  var CK = 'wfs_cookie_choice';
+  var banner = document.getElementById('cookieBanner');
+  var accept = document.getElementById('cookieAccept');
+  var necessary = document.getElementById('cookieNecessary');
+
+  function hasChoice(){
+    return !!localStorage.getItem(CK);
+  }
+  function setChoice(val){
+    localStorage.setItem(CK, val);
+    if(banner) banner.classList.remove('show');
+  }
+  if(banner && !hasChoice()){
+    banner.classList.add('show');
+  }
+  if(accept) accept.addEventListener('click', function(){ setChoice('all'); });
+  if(necessary) necessary.addEventListener('click', function(){ setChoice('necessary'); });
+})();
+</script>
+
+</body>
+</html>
