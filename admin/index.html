@@ -6,7 +6,7 @@
 <title>Dashboard – Wirtschaftsforum Stralsund</title>
 <link rel="stylesheet" href="../fonts.css">
 <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="../config.js"></script>
+<script src="../config.js?v=2"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
   const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -176,6 +176,90 @@
     tbody tr{border-bottom:1px solid var(--line);padding:8px 0;}
     .modal-grid{grid-template-columns:1fr;}
   }
+
+  /* ================= Barrierefreiheit: Zustände ================= */
+  html.a11y-contrast body{background:#000 !important;color:#fff !important;}
+  html.a11y-contrast{--ink:#fff;--body:#f0f0f0;--line:#444;--gray-bg:#111;--paper:#000;--accent:#ffd400;--accent-dark:#ffe45c;--accent-tint:#332b00;}
+  html.a11y-contrast header{background:#000 !important;border-color:#444 !important;}
+  html.a11y-contrast .field input,html.a11y-contrast .field select{background:#000;color:#fff;}
+  html.a11y-underline a{text-decoration:underline !important;}
+  html.a11y-bigcursor,html.a11y-bigcursor *{cursor:pointer !important;}
+  html.a11y-fs-1 body{font-size:107%;}
+  html.a11y-fs-2 body{font-size:116%;}
+  html.a11y-fs-3 body{font-size:128%;}
+  html.a11y-calm *,html.a11y-calm *::before,html.a11y-calm *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}
+  html.a11y-readable body{line-height:1.9 !important;letter-spacing:.01em !important;}
+  html.a11y-readable p{max-width:70ch;}
+
+  /* ================= Barrierefreiheits-Widget ================= */
+  .a11y-toggle{
+    position:fixed;right:20px;bottom:20px;z-index:220;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--ink,#0d1117);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    transition:transform .15s ease,background .15s ease;
+  }
+  .a11y-toggle:hover{background:var(--accent,#b5152b);transform:translateY(-2px);}
+  .a11y-toggle:focus-visible{outline:2px solid var(--accent,#b5152b);outline-offset:3px;}
+  .a11y-toggle svg{width:26px;height:26px;}
+
+  .a11y-panel{
+    position:fixed;right:20px;bottom:82px;z-index:220;
+    width:300px;max-width:calc(100vw - 40px);max-height:calc(100vh - 120px);overflow-y:auto;
+    background:#fff;border:1px solid var(--line,#e2e5ea);border-radius:10px;
+    box-shadow:0 16px 40px rgba(0,0,0,.18);
+    padding:20px;display:none;
+  }
+  .a11y-panel.open{display:block;}
+  .a11y-panel h2{font-size:14px;font-weight:800;color:var(--ink,#0d1117);margin-bottom:4px;}
+  .a11y-panel .a11y-sub{font-size:12px;color:#8a8f99;margin-bottom:14px;}
+  .a11y-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line,#e2e5ea);}
+  .a11y-row:first-of-type{border-top:none;}
+  .a11y-row span{font-size:13px;font-weight:600;color:var(--ink,#0d1117);}
+  .a11y-btnrow{display:flex;gap:6px;}
+  .a11y-btnrow button, .a11y-switch{
+    font-family:inherit;font-size:12px;font-weight:700;
+    border:1.5px solid var(--line,#e2e5ea);background:#fff;color:var(--ink,#0d1117);
+    border-radius:5px;padding:6px 10px;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .a11y-btnrow button:hover,.a11y-switch:hover{border-color:var(--accent,#b5152b);}
+  .a11y-switch[aria-pressed="true"]{background:var(--accent,#b5152b);border-color:var(--accent,#b5152b);color:#fff;}
+  .a11y-reset{margin-top:14px;width:100%;font-family:inherit;font-size:12.5px;font-weight:700;padding:9px;border-radius:5px;border:1.5px solid var(--line,#e2e5ea);background:var(--gray-bg,#f4f5f7);color:var(--ink,#0d1117);cursor:pointer;}
+  .a11y-reset:hover{border-color:var(--accent,#b5152b);}
+  .a11y-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;line-height:1;cursor:pointer;color:#8a8f99;padding:4px;}
+
+  /* ================= Cookie-Banner ================= */
+  .cookie-banner{
+    position:fixed;left:0;right:0;bottom:0;z-index:230;
+    background:var(--ink,#0d1117);color:#fff;
+    padding:20px 24px;
+    display:none;
+    box-shadow:0 -8px 24px rgba(0,0,0,.18);
+  }
+  .cookie-banner.show{display:block;}
+  .cookie-inner{
+    max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+    gap:24px;flex-wrap:wrap;
+  }
+  .cookie-text{font-size:13.5px;line-height:1.6;color:#c7cdd6;max-width:640px;flex:1;min-width:240px;}
+  .cookie-text a{color:#fff;text-decoration:underline;font-weight:600;}
+  .cookie-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .cookie-actions button{
+    font-family:inherit;font-size:13px;font-weight:700;padding:11px 18px;border-radius:4px;cursor:pointer;
+    border:1.5px solid transparent;transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .cookie-accept{background:var(--accent,#b5152b);color:#fff;}
+  .cookie-accept:hover{background:var(--accent-dark,#8a0f21);}
+  .cookie-necessary{background:transparent;color:#fff;border-color:rgba(255,255,255,.35);}
+  .cookie-necessary:hover{border-color:#fff;}
+
+  @media (max-width:640px){
+    .a11y-panel{right:12px;left:12px;width:auto;bottom:78px;}
+    .a11y-toggle{right:14px;bottom:14px;}
+    .cookie-banner{padding:18px 16px;}
+  }
+
 </style>
 </head>
 <body>
@@ -898,6 +982,193 @@
   });
 
   checkAuth();
+</script>
+
+
+<!-- ===== Barrierefreiheits-Widget ===== -->
+<button class="a11y-toggle" id="a11yToggle" aria-label="Barrierefreiheits-Einstellungen öffnen" aria-expanded="false" aria-controls="a11yPanel">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M4 8.5c2.5 1 5.3 1.5 8 1.5s5.5-.5 8-1.5M12 10v11M12 15l-3.5 6M12 15l3.5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<div class="a11y-panel" id="a11yPanel" role="dialog" aria-modal="false" aria-labelledby="a11yPanelTitle">
+  <button class="a11y-close" id="a11yClose" aria-label="Einstellungen schließen">&times;</button>
+  <h2 id="a11yPanelTitle">Barrierefreiheit</h2>
+  <p class="a11y-sub">Einstellungen werden lokal in Ihrem Browser gespeichert.</p>
+
+  <div class="a11y-row">
+    <span>Schriftgröße</span>
+    <div class="a11y-btnrow">
+      <button type="button" id="a11yFontMinus" aria-label="Schrift verkleinern">A−</button>
+      <button type="button" id="a11yFontPlus" aria-label="Schrift vergrößern">A+</button>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <span>Starker Kontrast</span>
+    <button type="button" class="a11y-switch" id="a11yContrast" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Links unterstreichen</span>
+    <button type="button" class="a11y-switch" id="a11yUnderline" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Lesefreundlicher Abstand</span>
+    <button type="button" class="a11y-switch" id="a11yReadable" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Animationen reduzieren</span>
+    <button type="button" class="a11y-switch" id="a11yCalm" aria-pressed="false">An</button>
+  </div>
+  <div class="a11y-row">
+    <span>Großer Mauszeiger</span>
+    <button type="button" class="a11y-switch" id="a11yCursor" aria-pressed="false">An</button>
+  </div>
+
+  <button type="button" class="a11y-reset" id="a11yReset">Alle Einstellungen zurücksetzen</button>
+</div>
+
+<!-- ===== Cookie-Banner ===== -->
+<div class="cookie-banner" id="cookieBanner" role="region" aria-label="Cookie-Hinweis">
+  <div class="cookie-inner">
+    <p class="cookie-text">
+      Wir verwenden ausschließlich technisch notwendige Cookies bzw. lokale Speicherung
+      (u. a. für Ihre Cookie-Auswahl, Ihre Barrierefreiheits-Einstellungen sowie – im
+      passwortgeschützten Admin-Bereich – Ihre Anmeldesitzung). Es findet kein Tracking und
+      keine Analyse Ihres Verhaltens statt. Details in unserer
+      <a href="../datenschutz.html">Datenschutzerklärung</a>.
+    </p>
+    <div class="cookie-actions">
+      <button type="button" class="cookie-necessary" id="cookieNecessary">Nur notwendige</button>
+      <button type="button" class="cookie-accept" id="cookieAccept">Verstanden</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // ===== Barrierefreiheit =====
+  var root = document.documentElement;
+  var KEY = 'wfs_a11y';
+  var FS_KEY = 'wfs_a11y_fs';
+  var toggles = {
+    a11yContrast:'a11y-contrast',
+    a11yUnderline:'a11y-underline',
+    a11yReadable:'a11y-readable',
+    a11yCalm:'a11y-calm',
+    a11yCursor:'a11y-bigcursor'
+  };
+
+  function loadState(){
+    var raw;
+    try{ raw = JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){ raw = {}; }
+    Object.keys(toggles).forEach(function(id){
+      var cls = toggles[id];
+      var on = !!raw[id];
+      root.classList.toggle(cls, on);
+      var btn = document.getElementById(id);
+      if(btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var fs = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(fs);
+  }
+
+  function saveState(){
+    var raw = {};
+    Object.keys(toggles).forEach(function(id){
+      raw[id] = root.classList.contains(toggles[id]);
+    });
+    localStorage.setItem(KEY, JSON.stringify(raw));
+  }
+
+  function applyFontSize(step){
+    step = Math.max(0, Math.min(3, step));
+    for(var i=1;i<=3;i++){ root.classList.remove('a11y-fs-'+i); }
+    if(step > 0) root.classList.add('a11y-fs-'+step);
+    localStorage.setItem(FS_KEY, String(step));
+  }
+
+  loadState();
+
+  var panel = document.getElementById('a11yPanel');
+  var toggleBtn = document.getElementById('a11yToggle');
+  var closeBtn = document.getElementById('a11yClose');
+
+  function openPanel(){
+    panel.classList.add('open');
+    toggleBtn.setAttribute('aria-expanded','true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    toggleBtn.setAttribute('aria-expanded','false');
+  }
+  if(toggleBtn){
+    toggleBtn.addEventListener('click', function(){
+      panel.classList.contains('open') ? closePanel() : openPanel();
+    });
+  }
+  if(closeBtn) closeBtn.addEventListener('click', closePanel);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closePanel();
+  });
+  document.addEventListener('click', function(e){
+    if(panel && panel.classList.contains('open') && !panel.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)){
+      closePanel();
+    }
+  });
+
+  Object.keys(toggles).forEach(function(id){
+    var btn = document.getElementById(id);
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+      var cls = toggles[id];
+      var on = !root.classList.contains(cls);
+      root.classList.toggle(cls, on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      saveState();
+    });
+  });
+
+  var fsMinus = document.getElementById('a11yFontMinus');
+  var fsPlus = document.getElementById('a11yFontPlus');
+  if(fsMinus) fsMinus.addEventListener('click', function(){
+    var cur = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(cur - 1);
+  });
+  if(fsPlus) fsPlus.addEventListener('click', function(){
+    var cur = parseInt(localStorage.getItem(FS_KEY) || '0', 10) || 0;
+    applyFontSize(cur + 1);
+  });
+
+  var resetBtn = document.getElementById('a11yReset');
+  if(resetBtn) resetBtn.addEventListener('click', function(){
+    Object.keys(toggles).forEach(function(id){
+      root.classList.remove(toggles[id]);
+      var btn = document.getElementById(id);
+      if(btn) btn.setAttribute('aria-pressed','false');
+    });
+    applyFontSize(0);
+    saveState();
+  });
+
+  // ===== Cookie-Banner =====
+  var CK = 'wfs_cookie_choice';
+  var banner = document.getElementById('cookieBanner');
+  var accept = document.getElementById('cookieAccept');
+  var necessary = document.getElementById('cookieNecessary');
+
+  function hasChoice(){
+    return !!localStorage.getItem(CK);
+  }
+  function setChoice(val){
+    localStorage.setItem(CK, val);
+    if(banner) banner.classList.remove('show');
+  }
+  if(banner && !hasChoice()){
+    banner.classList.add('show');
+  }
+  if(accept) accept.addEventListener('click', function(){ setChoice('all'); });
+  if(necessary) necessary.addEventListener('click', function(){ setChoice('necessary'); });
+})();
 </script>
 
 </body>
